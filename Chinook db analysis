@@ -1,0 +1,214 @@
+## This project explores music sales, customer behavior, and employee performance by answering a variety of business-driven and self-generated questions to build a strong foundation in SQL problem-solving.
+
+
+##Q1: How many artists have more than 1 album of different genres?
+SELECT 
+    artists.Name, 
+    COUNT(DISTINCT tracks.GenreId) AS genre_count
+FROM artists
+JOIN albums ON artists.ArtistId=albums.ArtistId
+JOIN tracks ON albums.AlbumId=tracks.AlbumId
+GROUP BY artists.artistid , artists.name
+HAVING COUNT(DISTINCT tracks.GenreId)>1
+;
+
+-##Q2: Who is the biggest Rock fan / i.e. spent the most money on tracks of the 'Rock' genre
+SELECT
+    customers.FirstName AS FirstName,
+    customers.LastName AS LastName,
+    SUM(invoice_items.UnitPrice * invoice_items.Quantity) AS TotalSpent
+FROM customers
+JOIN invoiceS ON customers.CustomerId = invoices.CustomerId
+JOIN invoice_items ON invoiceS.InvoiceId = invoice_items.InvoiceId
+JOIN tracks oN invoice_items.TrackId = tracks.TrackId
+JOIN genres ON tracks.GenreId = genres.GenreId
+WHERE genres.Name = 'Rock'
+GROUP BY customers.CustomerId
+ORDER BY TotalSpent DESC
+LIMIT 1;
+
+##Q3: WHICH employee has the highest total sales, how much has been sold?
+SELECT
+    employees.FirstName AS FirstName,
+    employees.LastName AS LastName,
+    SUM(invoices.Total) AS TotalSales
+FROM employees
+JOIN customers ON employees.EmployeeId = customers.SupportRepId
+JOIN invoices ON customers.CustomerId = invoices.CustomerId
+WHERE employees.Title = 'Sales Support Agent'
+GROUP BY employees.Employeeid
+ORDER BY TotalSales DESC
+limit 1;
+
+##Q4: Select for customer id, full name and only those customers from USA
+SELECT
+    CustomerId,
+    FirstName,
+    LastName,
+    Country
+FROM customers
+WHERE country != 'USA';
+
+##Q5: Customers from Brazil
+SELECT
+    CustomerId,
+    FirstName,
+    LastName,
+    Country
+FROM customers
+WHERE Country = 'Brazil';
+
+##Q6: Invoices of customers from Brazil. Full name, ID, and billing country.
+SELECT
+    customers.FirstName,
+    customers.LastName,
+    invoices.InvoiceId,
+    invoices.InvoiceDate,
+    invoices.BillingCountry
+FROM customers
+JOIN invoices ON customers.CustomerId = invoices.CustomerId
+WHERE customers.Country = 'Brazil';
+
+##Q7: Select employees who are Sales Support Agents
+SELECT
+    EmployeeId,
+    FirstName,
+    LastName,
+    Title
+FROM employees
+WHERE Title = 'Sales Support Agent';
+
+##Q8: Find unique/distinct list of billing countries from invoice table
+SELECT DISTINCT BillingCountry
+FROM invoices
+;
+
+##Q9: Query invoices associated with each sales agent.
+## Should include full name
+SELECT
+    employees.FirstName AS AgentFirstName,
+    employees.LastName AS AgentLastName,
+    invoices.invoiceid,
+    invoices.InvoiceDate,
+    invoices.total
+FROM employees
+JOIN customers ON employees.EmployeeId = customers.supportrepid
+JOIN invoices ON customers.CustomerId = invoices.CustomerId
+WHERE employees.Title = 'Sales Support Agent';
+
+##Q10: Select invoice total, customer name, country
+## sales agent name for all invoices + customers
+SELECT
+    invoices.Total AS InvoiceTotal,
+    customers.FirstName AS CustomerFirstName,
+    customers.LastName AS CustomerLastName,
+    customers.Country AS CustomerCountry,
+    employees.FirstName AS AgentFirstName,
+    employees.LastName AS AgentLastName
+FROM invoices
+JOIN customers ON invoices.CustomerId = customers.CustomerId
+JOIN employees ON customers.SupportRepId = employees.employeeid;
+
+##Q11: Select invoices from 09
+SELECT COUNT(*) AS InvoiceCount2009
+FROM invoices
+WHERE strftime('%Y', InvoiceDate) = '2009';
+
+##Q12: How many total sales in 09
+SELECT
+    SUM(Total) AS TotalSales2009
+FROM
+    invoices
+WHERE
+    InvoiceDate >= '2009-01-01'
+    AND InvoiceDate < '2010-01-01';
+
+##Q13: List each invoice line with corresponding track name purchased
+SELECT
+    ii.InvoiceLineId,
+    t.Name AS TrackName
+FROM
+    invoice_items ii
+JOIN
+    tracks t ON ii.TrackId = t.TrackId;
+
+##Q14: Get invoice line ID, track name, and artist who made track
+SELECT 
+    ii.InvoiceLineId,
+    t.Name AS TrackName,
+    ar.Name AS ArtistName
+FROM 
+    invoice_items ii
+JOIN 
+    tracks t ON ii.TrackId = t.TrackId
+JOIN 
+    albums al ON t.AlbumId = al.AlbumId
+JOIN 
+    artists ar ON al.ArtistId = ar.ArtistId;
+
+##Q15: List every track with its album title, media type
+## and genre name
+SELECT 
+    t.TrackId,
+    t.Name AS TrackName,
+    al.Title AS AlbumName,
+    mt.Name AS MediaType,
+    g.Name AS Genre
+FROM 
+    tracks t
+LEFT JOIN 
+    albums al ON t.AlbumId = al.AlbumId
+LEFT JOIN 
+    media_types mt ON t.MediaTypeId = mt.MediaTypeId
+LEFT JOIN 
+    genres g ON t.GenreId = g.GenreId;
+
+##Q16: Show the top 5 genres by number of tracks in the database.
+SELECT 
+    g.Name AS Genre,
+    COUNT(t.TrackId) AS NumberOfTracks
+FROM 
+    genres g
+LEFT JOIN 
+    tracks t ON g.GenreId = t.GenreId
+GROUP BY 
+    g.GenreId, g.Name
+ORDER BY 
+    NumberOfTracks DESC
+LIMIT 5;
+
+##Q17:  sum all invoices for customers handled by each sales agen
+SELECT 
+    e.EmployeeId,
+    e.FirstName || ' ' || e.LastName AS SalesAgentName,
+    SUM(i.Total) AS TotalSales
+FROM 
+    employees e
+JOIN 
+    customers c ON e.EmployeeId = c.SupportRepId
+JOIN 
+    invoices i ON c.CustomerId = i.CustomerId
+GROUP BY 
+    e.EmployeeId, SalesAgentName
+ORDER BY 
+    TotalSales DESC;
+
+##Q18: return single sales agent who made most sales dollars in 09
+SELECT 
+    e.EmployeeId,
+    e.FirstName || ' ' || e.LastName AS SalesAgentName,
+    SUM(i.Total) AS TotalSales2009
+FROM 
+    employees e
+JOIN 
+    customers c ON e.EmployeeId = c.SupportRepId
+JOIN 
+    invoices i ON c.CustomerId = i.CustomerId
+WHERE 
+    i.InvoiceDate >= '2009-01-01' 
+    AND i.InvoiceDate < '2010-01-01'
+GROUP BY 
+    e.EmployeeId, SalesAgentName
+ORDER BY 
+    TotalSales2009 DESC
+LIMIT 1;
